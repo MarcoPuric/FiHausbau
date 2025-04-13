@@ -97,11 +97,14 @@ import datetime
 
 with tab1:
     st.header("Sparziel-Prognose: 100.000 € Eigenkapital")
-    st.markdown("### 🧾 Monatliche Einzahlungen (Ist vs. Plan)")
+
+    start_jahr = 2026  # 👉 Plan beginnt erst ab 2026
+
+    st.markdown("### 🎁 Bonus-Einzahlung 2025 (vor Planstart)")
     bonus_2025 = st.number_input(
-    "Einmalige Sonderzahlung im Dezember 2025 (€)",
-    min_value=0, max_value=50000, step=500, value=0
-)
+        "Einmalige Sonderzahlung im Dezember 2025 (€)",
+        min_value=0, max_value=50000, step=500, value=0
+    )
 
     einzahlungen_ist = []
     labels = []
