@@ -60,7 +60,6 @@ with tab1:
         data = data.reset_index()
         data['Tage'] = range(len(data))
 
-        # Modell & Kennzahlen
         model = LinearRegression()
         model.fit(data[['Tage']], data['Close'])
         data['Prognose'] = model.predict(data[['Tage']])
@@ -74,7 +73,6 @@ with tab1:
         info = yf.Ticker(ticker).info
         div_yield = info.get('dividendYield', None)
 
-        # Layout in Karte
         with st.container():
             st.markdown(f"#### {choice}")
             c1, c2, c3 = st.columns(3)
@@ -99,71 +97,65 @@ with tab2:
     st.header("Sparziel-Prognose: 100.000 € Eigenkapital")
     st.markdown("### 🧾 Monatliche Einzahlungen (Ist vs. Plan)")
 
-        # Eingabemaske für jede Monats-Einzahlung
-        einzahlungen_ist = []
-        labels = []
-        kapital_ist = []
-        kapital_ist_wert = 0
-        kapital_plan = []
-        kapital_plan_wert = 0
-        zinssatz_monatlich = rendite_slider / 12
+    einzahlungen_ist = []
+    labels = []
+    kapital_ist = []
+    kapital_ist_wert = 0
+    kapital_plan = []
+    kapital_plan_wert = 0
+    zinssatz_monatlich = rendite_slider / 12
 
-        for jahr in range(jahre):
-            monatsrate = raten[jahr]
-            for monat in range(12):
-                index = jahr * 12 + monat
-                monat_name = pd.to_datetime(f"2025-{monat+1:02d}-01") + pd.DateOffset(years=jahr)
-                label = monat_name.strftime("%b %Y")
-                labels.append(label)
+    for jahr in range(jahre):
+        monatsrate = raten[jahr]
+        for monat in range(12):
+            index = jahr * 12 + monat
+            monat_name = pd.to_datetime(f"2025-{monat+1:02d}-01") + pd.DateOffset(years=jahr)
+            label = monat_name.strftime("%b %Y")
+            labels.append(label)
 
-                # PLAN
-                kapital_plan_wert *= (1 + zinssatz_monatlich)
-                kapital_plan_wert += monatsrate
-                kapital_plan.append(kapital_plan_wert)
+            kapital_plan_wert *= (1 + zinssatz_monatlich)
+            kapital_plan_wert += monatsrate
+            kapital_plan.append(kapital_plan_wert)
 
-                # IST – manuelle Eingabe
-                ist = st.number_input(f"{label} – Einzahlung (€)", min_value=0, max_value=10000, step=50,
-                                    value=monatsrate if index < 12 else 0, key=f"einzahlung_{index}")
-                einzahlungen_ist.append(ist)
+            ist = st.number_input(f"{label} – Einzahlung (€)", min_value=0, max_value=10000, step=50,
+                                  value=monatsrate if index < 12 else 0, key=f"einzahlung_{index}")
+            einzahlungen_ist.append(ist)
 
-                kapital_ist_wert *= (1 + zinssatz_monatlich)
-                kapital_ist_wert += ist
-                kapital_ist.append(kapital_ist_wert)
+            kapital_ist_wert *= (1 + zinssatz_monatlich)
+            kapital_ist_wert += ist
+            kapital_ist.append(kapital_ist_wert)
 
-        # Ampel-Logik (letzter verfügbarer Monat)
-        abweichung = kapital_ist[-1] - kapital_plan[len(kapital_ist)-1]
-        status_text = ""
-        ampel_farbe = ""
+    abweichung = kapital_ist[-1] - kapital_plan[len(kapital_ist)-1]
+    status_text = ""
+    ampel_farbe = ""
 
-        if abweichung >= 500:
-            status_text = "✅ Du liegst über Plan!"
-            ampel_farbe = "🟢"
-        elif abweichung >= -500:
-            status_text = "🟡 Du liegst im erwarteten Bereich."
-            ampel_farbe = "🟡"
-        else:
-            status_text = "🔴 Du liegst unter Plan – prüfe deine Sparrate!"
-            ampel_farbe = "🔴"
+    if abweichung >= 500:
+        status_text = "✅ Du liegst über Plan!"
+        ampel_farbe = "🟢"
+    elif abweichung >= -500:
+        status_text = "🟡 Du liegst im erwarteten Bereich."
+        ampel_farbe = "🟡"
+    else:
+        status_text = "🔴 Du liegst unter Plan – prüfe deine Sparrate!"
+        ampel_farbe = "🔴"
 
-        # Ampel & Info anzeigen
-        st.markdown(f"### {ampel_farbe} Fortschritt: {status_text}")
+    st.markdown(f"### {ampel_farbe} Fortschritt: {status_text}")
 
-        fig3, ax3 = plt.subplots(figsize=(10, 4))
-        ax3.plot(kapital_plan, label="📈 Geplanter Verlauf", linewidth=2)
-        ax3.plot(kapital_ist, label="✅ Tatsächlicher Verlauf", linestyle="--", linewidth=2)
-        ax3.axhline(zielkapital, color="gray", linestyle=":", label="Ziel: 100.000 €")
-        ax3.set_title("Kapitalentwicklung: Plan vs. Realität")
-        ax3.set_ylabel("Kapital in €")
-        ax3.set_xlabel("Monate")
-        ax3.set_xticks(np.linspace(0, len(labels)-1, 8))
-        ax3.set_xticklabels(labels[::len(labels)//8], rotation=45)
-        ax3.grid(True)
-        ax3.legend()
-        st.pyplot(fig3)
-
+    fig3, ax3 = plt.subplots(figsize=(10, 4))
+    ax3.plot(kapital_plan, label="📈 Geplanter Verlauf", linewidth=2)
+    ax3.plot(kapital_ist, label="✅ Tatsächlicher Verlauf", linestyle="--", linewidth=2)
+    ax3.axhline(zielkapital, color="gray", linestyle=":", label="Ziel: 100.000 €")
+    ax3.set_title("Kapitalentwicklung: Plan vs. Realität")
+    ax3.set_ylabel("Kapital in €")
+    ax3.set_xlabel("Monate")
+    ax3.set_xticks(np.linspace(0, len(labels)-1, 8))
+    ax3.set_xticklabels(labels[::len(labels)//8], rotation=45)
+    ax3.grid(True)
+    ax3.legend()
+    st.pyplot(fig3)
 
     k1, k2 = st.columns([4, 1])
-    k1.markdown(f"**Kapital nach {jahre} Jahren:** {endkapital:,.2f} €")
+    k1.markdown(f"**Kapital nach {jahre} Jahren (geplant):** {endkapital:,.2f} €")
     k2.progress(fortschritt / 100)
 
     fig2, ax2 = plt.subplots(figsize=(10, 3))
