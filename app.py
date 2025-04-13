@@ -37,10 +37,10 @@ col3.metric("Zuwachs (letzte 12 Monate)", f"{monatlicher_zuwachs:,.2f} €")
 st.markdown("---")
 
 # === TABS: Portfolio vs Sparziel ===
-tab1, tab2 = st.tabs(["📊 Portfolio-Analyse", "💰 Sparziel & Förderung"])
+tab1, tab2 = st.tabs(["💰 Sparziel & Förderung", "📊 Portfolio-Analyse"])
 
 # === TAB 1: PORTFOLIO ===
-with tab1:
+with tab2:
     st.header("ETF & Aktien-Analyse")
 
     assets = {
@@ -93,17 +93,23 @@ with tab1:
             st.markdown("---")
 
 # === TAB 2: SPARZIEL & FÖRDERUNG ===
-with tab2:
+import datetime
+
+with tab1:
     st.header("Sparziel-Prognose: 100.000 € Eigenkapital")
     st.markdown("### 🧾 Monatliche Einzahlungen (Ist vs. Plan)")
 
     einzahlungen_ist = []
     labels = []
     kapital_ist = []
-    kapital_ist_wert = 0
     kapital_plan = []
+    kapital_ist_wert = 0
     kapital_plan_wert = 0
     zinssatz_monatlich = rendite_slider / 12
+
+    # Nur bis aktuellen Monat eingeben
+    heute = datetime.datetime.today()
+    akt_monate = (heute.year - 2025) * 12 + heute.month - 1  # Start ab Jan 2025
 
     for jahr in range(jahre):
         monatsrate = raten[jahr]
@@ -117,18 +123,20 @@ with tab2:
             kapital_plan_wert += monatsrate
             kapital_plan.append(kapital_plan_wert)
 
-            ist = st.number_input(f"{label} – Einzahlung (€)", min_value=0, max_value=10000, step=50,
-                                  value=monatsrate if index < 12 else 0, key=f"einzahlung_{index}")
-            einzahlungen_ist.append(ist)
+            # Nur bis aktueller Monat bearbeitbar
+            if index <= akt_monate:
+                ist = st.number_input(f"{label} – Einzahlung (€)", min_value=0, max_value=10000,
+                                      step=50, value=monatsrate if index < 12 else 0,
+                                      key=f"einzahlung_{index}")
+            else:
+                ist = 0  # gesperrt
 
+            einzahlungen_ist.append(ist)
             kapital_ist_wert *= (1 + zinssatz_monatlich)
             kapital_ist_wert += ist
             kapital_ist.append(kapital_ist_wert)
 
     abweichung = kapital_ist[-1] - kapital_plan[len(kapital_ist)-1]
-    status_text = ""
-    ampel_farbe = ""
-
     if abweichung >= 500:
         status_text = "✅ Du liegst über Plan!"
         ampel_farbe = "🟢"
@@ -141,6 +149,18 @@ with tab2:
 
     st.markdown(f"### {ampel_farbe} Fortschritt: {status_text}")
 
+    # Säulendiagramm für Ziel vs Ist
+    fig_saeulen, ax_saeulen = plt.subplots(figsize=(6, 4))
+    bars = ax_saeulen.bar(["Ziel", "Tatsächlich"], [zielkapital, kapital_ist[-1]], color=["red", "blue"])
+    ax_saeulen.set_ylim(0, max(zielkapital * 1.1, kapital_ist[-1] * 1.1))
+    ax_saeulen.set_title("🏡 Fortschritt Richtung Haus")
+    for bar in bars:
+        height = bar.get_height()
+        ax_saeulen.text(bar.get_x() + bar.get_width() / 2., height + 1000,
+                        f'{int(height):,} €', ha='center')
+    st.pyplot(fig_saeulen)
+
+    # Linien-Diagramm Plan vs Ist
     fig3, ax3 = plt.subplots(figsize=(10, 4))
     ax3.plot(kapital_plan, label="📈 Geplanter Verlauf", linewidth=2)
     ax3.plot(kapital_ist, label="✅ Tatsächlicher Verlauf", linestyle="--", linewidth=2)
@@ -154,19 +174,10 @@ with tab2:
     ax3.legend()
     st.pyplot(fig3)
 
+    # Fortschrittsbalken
     k1, k2 = st.columns([4, 1])
     k1.markdown(f"**Kapital nach {jahre} Jahren (geplant):** {endkapital:,.2f} €")
-    k2.progress(fortschritt / 100)
-
-    fig2, ax2 = plt.subplots(figsize=(10, 3))
-    ax2.plot(kapital, label="Kapitalverlauf", linewidth=2)
-    ax2.axhline(zielkapital, color="gray", linestyle="--", label="Ziel: 100.000 €")
-    ax2.set_title("")
-    ax2.set_xticks([])
-    ax2.set_yticks([])
-    ax2.grid(True)
-    ax2.legend()
-    st.pyplot(fig2)
+    k2.progress(min(kapital_ist[-1] / zielkapital, 1.0))
 
     st.markdown("### Förderungen in Bayern")
     query = "Förderprogramme Hausbau Bayern BayernLabo KfW 300 site:.de"
