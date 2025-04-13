@@ -98,24 +98,29 @@ import datetime
 with tab1:
     st.header("Sparziel-Prognose: 100.000 € Eigenkapital")
     st.markdown("### 🧾 Monatliche Einzahlungen (Ist vs. Plan)")
+    bonus_2025 = st.number_input(
+    "Einmalige Sonderzahlung im Dezember 2025 (€)",
+    min_value=0, max_value=50000, step=500, value=0
+)
 
     einzahlungen_ist = []
     labels = []
     kapital_ist = []
     kapital_plan = []
-    kapital_ist_wert = 0
+    kapital_ist_wert = bonus_2025
     kapital_plan_wert = 0
     zinssatz_monatlich = rendite_slider / 12
 
     # Nur bis aktuellen Monat eingeben
     heute = datetime.datetime.today()
-    akt_monate = (heute.year - 2025) * 12 + heute.month - 1  # Start ab Jan 2025
+    akt_monate = (heute.year - start_jahr) * 12 + heute.month - 1
 
     for jahr in range(jahre):
         monatsrate = raten[jahr]
         for monat in range(12):
             index = jahr * 12 + monat
-            monat_name = pd.to_datetime(f"2025-{monat+1:02d}-01") + pd.DateOffset(years=jahr)
+            start_jahr = 2026
+            monat_name = pd.to_datetime(f"{start_jahr}-{monat+1:02d}-01") + pd.DateOffset(years=jahr)
             label = monat_name.strftime("%b %Y")
             labels.append(label)
 
